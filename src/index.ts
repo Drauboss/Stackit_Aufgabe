@@ -1,3 +1,7 @@
+import axios from 'axios';
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import express, { Express, Request, Response } from 'express';
 
 interface Notification {
@@ -13,9 +17,47 @@ const notifications: Notification[] = [];
 
 app.use(express.json())
 
-//TODO: change to something more suitable
-function forwardToMessenger(notification: Notification): void {
+const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
+
+async function forwardToMessenger(notification: Notification): Promise<void> {
     console.log(notification)
+    if (!discordWebhookUrl) {
+        console.error('Discord webhook url is invalid or not set.')
+        return;
+    }
+
+    const discordPayload = {
+        embeds: [
+            {
+                title: `Warning: ${notification.Name}`,
+                description: notification.Description,
+                color: 15158332,
+                fields: [
+                    {
+                        name: 'Type',
+                        value: notification.Type,
+                        inline: true
+                    },
+                    {
+                        name: 'Timestamp',
+                        value: new Date().toISOString(),
+                        inline: true
+                    }
+                ],
+                footer: {
+                    text: 'Automated Notifications Service'
+                }
+            }
+        ]
+    }
+
+    try {
+        await axios.post(discordWebhookUrl, discordPayload);
+        console.log('Succesfully forwarded Notification to discord')
+    } catch {
+        console.error('Failed to forward Notification to discord')
+
+    }
 }
 
 app.get('/', (req: Request, res: Response) => {
