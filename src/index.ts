@@ -4,6 +4,7 @@ dotenv.config();
 
 import express, { Express, Request, Response } from 'express';
 
+//TODO: add timestamp and id
 interface Notification {
     Type: 'Warning' | 'Info'; //can add more
     Name: string;
@@ -19,6 +20,18 @@ app.use(express.json())
 
 const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
+
+/**
+ * Forwards a notification to a Discord channel using a webhook.
+ *
+ * The function constructs a Discord embed payload from the provided `Notification` object
+ * and sends it to the Discord webhook URL. If the webhook URL is not set or invalid,
+ * it logs an error and returns early. On success or failure of the HTTP request,
+ * it logs the corresponding message.
+ *
+ * @param notification - The notification object containing details to be sent.
+ * @returns A promise that resolves when the notification has been forwarded.
+ */
 async function forwardToMessenger(notification: Notification): Promise<void> {
     console.log(notification)
     if (!discordWebhookUrl) {
@@ -67,6 +80,8 @@ app.get('/', (req: Request, res: Response) => {
 app.get('/notifications', (req: Request, res: Response) => {
     return res.status(200).json(notifications)
 })
+
+//TODO: add get method to retrieve specific notification with /notifications/{id}
 
 app.post('/notifications', (req: Request, res: Response) => {
     const notification: Notification = req.body;
