@@ -22,6 +22,10 @@ app.get('/', (req: Request, res: Response) => {
     res.status(200).json({ message: 'This is an API for forwarding messages to a messaging service' })
 })
 
+app.get('/notifications', (req: Request, res: Response) => {
+    return res.status(200).json(notifications)
+})
+
 app.post('/notifications', (req: Request, res: Response) => {
     const notification: Notification = req.body;
 
