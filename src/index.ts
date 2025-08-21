@@ -80,9 +80,9 @@ app.post('/notifications', (req: Request, res: Response) => {
     switch (notification.Type) {
         case 'Warning':
             forwardToMessenger(notification);
-            return res.status(200).json({ message: 'Notification will be forwarded.' })
+            return res.status(202).json({ message: 'Notification will be forwarded.' }) //accepted
         case 'Info':
-            return res.status(200).json({ message: 'Notification will not be forwarded.' })
+            return res.status(204).send() //no content
         default:
             return res.status(400).json({ error: 'Notification Type is not valid.' })
     }
