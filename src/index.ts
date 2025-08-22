@@ -1,88 +1,36 @@
-import axios from 'axios';
-import * as dotenv from 'dotenv';
-dotenv.config();
-
 import express, { Express, Request, Response } from 'express';
+import { Notification, Notifier, DiscordNotifier } from './services/notification.service';
 
-//TODO: add timestamp and id
-interface Notification {
-    Type: 'Warning' | 'Info'; //can add more
-    Name: string;
-    Description: string;
-}
 
 const app: Express = express();
 const PORT: number = 3000;
+
 
 const notifications: Notification[] = [];
 
 app.use(express.json())
 
-const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
 
+const activeNotifier: Notifier = new DiscordNotifier();
 
 /**
- * Forwards a notification to a Discord channel using a webhook.
- *
- * The function constructs a Discord embed payload from the provided `Notification` object
- * and sends it to the Discord webhook URL. If the webhook URL is not set or invalid,
- * it logs an error and returns early. On success or failure of the HTTP request,
- * it logs the corresponding message.
- *
- * @param notification - The notification object containing details to be sent.
- * @returns A promise that resolves when the notification has been forwarded.
+ * GET '/' default endpoint
  */
-async function forwardToMessenger(notification: Notification): Promise<void> {
-    console.log(notification)
-    if (!discordWebhookUrl) {
-        console.error('Discord webhook url is invalid or not set.')
-        return;
-    }
-
-    const discordPayload = {
-        embeds: [
-            {
-                title: `Warning: ${notification.Name}`,
-                description: notification.Description,
-                color: 15158332,
-                fields: [
-                    {
-                        name: 'Type',
-                        value: notification.Type,
-                        inline: true
-                    },
-                    {
-                        name: 'Timestamp',
-                        value: new Date().toISOString(),
-                        inline: true
-                    }
-                ],
-                footer: {
-                    text: 'Automated Notifications Service'
-                }
-            }
-        ]
-    }
-
-    try {
-        await axios.post(discordWebhookUrl, discordPayload);
-        console.log('Succesfully forwarded Notification to discord')
-    } catch {
-        console.error('Failed to forward Notification to discord')
-
-    }
-}
-
 app.get('/', (req: Request, res: Response) => {
     res.status(200).json({ message: 'This is an API for forwarding messages to a messaging service' })
 })
+
+/**
+ * GET '/notifications' endpoint to retrieve all notifications
+ */
 
 app.get('/notifications', (req: Request, res: Response) => {
     return res.status(200).json(notifications)
 })
 
-//TODO: add get method to retrieve specific notification with /notifications/{id}
-
+/**
+ * POST '/notifications' endpoint to receive a notifiction and forward if needed
+ */
 app.post('/notifications', (req: Request, res: Response) => {
     const notification: Notification = req.body;
 
@@ -94,7 +42,8 @@ app.post('/notifications', (req: Request, res: Response) => {
 
     switch (notification.Type) {
         case 'Warning':
-            forwardToMessenger(notification);
+            //IDEA: add notifications to a queue to ensure all of them are forwarded
+            activeNotifier.send(notification);
             return res.status(202).json({ message: 'Notification will be forwarded.' }) //accepted
         case 'Info':
             return res.status(204).send() //no content
