@@ -1,15 +1,12 @@
 import express, { Express, Request, Response } from 'express';
 import { Notification, Notifier, DiscordNotifier } from './services/notification.service';
 
-
 const app: Express = express();
 const PORT: number = 3000;
-
 
 const notifications: Notification[] = [];
 
 app.use(express.json())
-
 
 const activeNotifier: Notifier = new DiscordNotifier();
 
